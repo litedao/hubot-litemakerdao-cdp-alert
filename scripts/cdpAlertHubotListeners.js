@@ -9,7 +9,7 @@ const cdpObjectToString = (cdpObj) => {
   if (cdpObj.collateralizationRatio.toString() != 'Infinity')
     cdpObj.collateralizationRatio = `${cdpObj.collateralizationRatio}%`
 
-  return `Id: ${cdpObj.id}\n Collateralization ratio: ${cdpObj.collateralizationRatio}\n Collateral value: ${cdpObj.collateralValueInEth}\n Debt value: ${cdpObj.debtValueDai}\n Liquidation price: ${cdpObj.liquidationPriceEthUSD}`
+  return `Id: ${cdpObj.id}\n Collateralization ratio: ${cdpObj.collateralizationRatio}\n Collateral value: ${cdpObj.collateralValueInEth}\n Debt value in dai: ${cdpObj.debtValueDai}\n Liquidation price: ${cdpObj.liquidationPriceEthUSD}`
 }
 
 const newLineJoin = FU.join('\n\n')
@@ -96,7 +96,7 @@ module.exports = (robot) => {
     const cdpInfo = await Maker.getCDP(Number(arrayOfCmd[0]))
 
     const desiredCollatRatio = Number(arrayOfCmd[1].substring(0, arrayOfCmd[1].length - 1))
-    console.log('this is the desired ratio', desiredCollatRatio)
+
     //addCDPId and get back userObj
     const addCdpId = FU.modObjArrPushKickBack('cdps', {id: arrayOfCmd[0], liqNotifyRatio: desiredCollatRatio})
 
@@ -105,29 +105,38 @@ module.exports = (robot) => {
     msg.reply(`You are now tracking the following CDP and will be notified when the CDP\'s collateralization ratio falls below *${desiredCollatRatio}%*\n ${cdpObjectToString(cdpInfo)}`)
   })
 
-  robot.respond('/cdp list weekly$/', async (msg) => {
-    const outcomeMessage = setupCdpTimedList('cdpListWeekly','weekly', robot, msg)
-    msg.reply(outcomeMessage)
-  })
+   robot.respond('/cdp list(.*)$/i', async (msg) => {
+     if (msg.match[2] != undefined) {
+       msg.reply(`\`${msg.message.txt}\` is not a valid command, to see a list of available commands run \`@doge help cdp\``)
 
-  robot.respond('/cdp list daily$/', async (msg) => {
-    const outcomeMessage = setupCdpTimedList('cdpListDaily','daily', robot, msg)
-    msg.reply(outcomeMessage)
-  })
+    } else if (msg.match[1] === ' daily') {
 
-  robot.respond(/cdp list$/i, async (msg) => {
-    try {
-      const trackedBrainCdps = robot.brain.get(msg.message.user.id).cdps
-      const arrTrackedCdpPromises = trackedBrainCdps.map( async (cdp) => await Maker.getCDP(Number(cdp.id)))
-      const arrTrackedCdps = await Promise.all(arrTrackedCdpPromises)
-      const trackedCdpsString = newLineJoin(arrTrackedCdps.map(cdpObj => cdpObjectToString(cdpObj)))
+      const outcomeMessage = setupCdpTimedList('cdpListDaily','daily', robot, msg)
+      msg.reply(outcomeMessage)
 
-      msg.reply(`Here are all of the CDPs you are currently tracking:\n ${trackedCdpsString}`)
-    } catch (err) {
-      msg.reply(err)
+    } else if (msg.match[1] === ' weekly') {
+
+      const outcomeMessage = setupCdpTimedList('cdpListWeekly','weekly', robot, msg)
+      msg.reply(outcomeMessage)
+
+    } else if (msg.match[1] === ' ' || msg.match[1] === '') {
+      try {
+        if (robot.brain.get(msg.message.user.id) && (robot.brain.get(msg.message.user.id).cdps && robot.brain.get(msg.message.user.id).cdps.length)) {
+          const trackedBrainCdps = robot.brain.get(msg.message.user.id).cdps
+          const arrTrackedCdpPromises = trackedBrainCdps.map( async (cdp) => await Maker.getCDP(Number(cdp.id)))
+          const arrTrackedCdps = await Promise.all(arrTrackedCdpPromises)
+          const trackedCdpsString = newLineJoin(arrTrackedCdps.map(cdpObj => cdpObjectToString(cdpObj)))
+          return msg.reply(`Here are all of the CDPs you are currently tracking:\n ${trackedCdpsString}`)
+        } else {
+          return msg.reply(`You are not currently watching any CDP\'s and therefore cannot perform \`@doge cdp list\`. To watch a cdp type \`@doge cdp watch <CDPId>\``)
+        }
+      } catch (err) {
+        msg.reply(err)
+      }
+    } else {
+      msg.reply('Command was not recognized. Try the command \`@doge help cdp\` for assistance.')
     }
   })
-
 
   robot.respond(/cdp forget/i, async (msg) => {
 
@@ -140,10 +149,8 @@ module.exports = (robot) => {
       return msg.reply(`CDP ${cdpIdToForget} has now been forgotten and will no longer be watched.`)
     }
 
-    return msg.reply(`You were not tracking CDP ${cdpIdToForget} and therefore can\'t forget it. If you would like to see a full list of the CDP\'s you are watching, run the command \`@doge cdp list\`.`)
+    return msg.reply(`You were not watching CDP ${cdpIdToForget} and therefore can\'t forget it. If you would like to see a full list of the CDP\'s you are watching, run the command \`@doge cdp list\`.`)
 
   })
-
-
 
 }

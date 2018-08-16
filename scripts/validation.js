@@ -39,7 +39,6 @@ class Validate {
 
   static collatRatioHighEnough (text, outcome) {
     const percentToNum = Number(text.substring(0, text.length - 1))
-    console.log(percentToNum)
     if (percentToNum < 160) {
       outcome.failure('collateralization ratio is below 160%, that\'s dangerous! Re-run the watch command and make your collateralization ratio percentage higher.')
     }

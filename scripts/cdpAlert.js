@@ -5,6 +5,7 @@ const {RBU, FU} = require('hubot-doge-utility-functions')
 const newLineJoin = FU.join('\n\n')
 
 const cdpObjectToString = (cdpObj) => {
+  console.log('trying to change to string', cdpObj)
   if (cdpObj.collateralizationRatio.toString() != 'Infinity')
     cdpObj.collateralizationRatio = `${cdpObj.collateralizationRatio}%`
 
@@ -34,13 +35,12 @@ const cdpTimedList = async (timeDelim, timeDelimString, robot) => {
 module.exports = (robot) => {
 
   // cdp list daily cron job (runs everyday at 12:00 serv time)
-  cron.schedule('* * * * *', async () => {
+  cron.schedule('0 12 * * *', async () => {
   await cdpTimedList('cdpListDaily', 'daily', robot)
   })
 
-
   // cdp list weekly cron job (runs every Monday at 12:00 serv time)
-  cron.schedule('* * * * *', async () => {
+  cron.schedule('0 12 * * 1', async () => {
   await cdpTimedList('cdpListWeekly', 'weekly', robot)
   })
 
@@ -54,6 +54,7 @@ module.exports = (robot) => {
 
       if ((robot.brain.get(k) != null) && robot.brain.get(k).cdps && robot.brain.get(k).cdps.length) {
         const watchedCdpsArr = robot.brain.get(k).cdps
+
         for (const cdp in watchedCdpsArr) {
           try {
             const currentCdpCollat = await Maker.getCDP(Number(watchedCdpsArr[cdp].id))

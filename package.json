@@ -1,6 +1,6 @@
 {
   "name": "hubot-makerdao-cdp-alert",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Hubot CDP alert bot for the Dai",
   "main": "index.js",
   "scripts": {
