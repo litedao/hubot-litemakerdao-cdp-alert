@@ -47,6 +47,25 @@ class Validate {
   static cdpId (text, outcome) { /(^[0-9]*$)/i.test(text) ? '' : outcome.failure('invalid CDP id')
   }
 
+  static cdpForgetReq (incomingCdpId) {
+    const outcome = new OutcomeObj
+    if (!incomingCdpId) {
+      outcome.failure('invalid CDP forget command. No CDP Id was provided.')
+    } else {
+      this.cdpId(incomingCdpId, outcome)
+    }
+
+    return (outcome.getFailures().length === 0) ? // is the expense valid?
+    { outcome: true,
+      explain: 'The CDP forget request is valid.',
+    } : //expense is valid
+
+    { outcome: false,
+      explain: outcome.getFailures('text')
+    } //expense is not valid
+
+  }
+
   static cdpWatchReq (array) {
     const outcome = new OutcomeObj
     if (array.length > 2 || !array.length) {

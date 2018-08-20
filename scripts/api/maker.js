@@ -21,7 +21,12 @@ async function getCDP(cdpId) {
     return returnCdp
 
   } catch (error) {
-    return error
+    console.log(error)
+    if (error.toString().substr(7, 19) === 'amount "NaN" is not')
+      throw `:x: CDP ${cdpId} has either been closed or does not exist, therefore I am unable to watch it. Please re run the watch command: \`@doge cdp watch <CdpID>\` with an active CDP Id.`
+
+    if (error.toString().substr(7, 22) === "That CDP doesn't exist")
+      throw `:x: CDP ${cdpId} has either been closed or does not exist, therefore I am unable to watch it. Please re run the watch command: \`@doge cdp watch <CdpID>\` with an active CDP Id.`
   }
 }
 

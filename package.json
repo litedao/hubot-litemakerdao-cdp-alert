@@ -1,6 +1,6 @@
 {
   "name": "hubot-makerdao-cdp-alert",
-  "version": "1.0.4",
+  "version": "2.0.0",
   "description": "Hubot CDP alert bot for the Dai",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "@makerdao/dai": "^0.5.7",
-    "hubot-doge-utility-functions": "^1.4.4",
+    "hubot-doge-utility-functions": "^2.0.1",
     "node-cron": "^1.2.1"
   }
 }

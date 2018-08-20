@@ -31,11 +31,11 @@ const checkForCdp = (cdpId, cdpArr) => {
   })[0]
 }
 
-const checkForLiquidRate = (arrayOfCmd) => {
-  if (arrayOfCmd.length === 1) {
-    arrayOfCmd = [arrayOfCmd[0], '200%']
+const checkForLiquidRatio = (collatPercent) => {
+  if (!collatPercent) {
+    return '200%'
   }
-  return arrayOfCmd
+  return collatPercent
 }
 
 const setupCdpTimedList = (timeDelin, timeDelinString, robot, msg) => {
@@ -64,26 +64,18 @@ const setupCdpTimedList = (timeDelin, timeDelinString, robot, msg) => {
 }
 
 
-
 module.exports = (robot) => {
 
-  robot.respond(/cdp watch/i, async (msg) => {
-
-    // removes the '@doge channels join' command
-    const removeCdpWatchCmd = FU.replace(`@${process.env.ROCKETCHAT_USER} cdp watch`,'')
-
-    // cleans up and retreives the Cdp Id and the optional collat ratio
+  robot.respond('/cdp watch (.*)$/i', async (msg) => {
+    msg.finish()
+    let arrayOfCmd = FU.spaceSplit(msg.match[1])
     // arrayOfCmd -> [cdpId, collateralizationRatio] -> [12, '300%']
-    let arrayOfCmd = FU.compose(FU.spaceSplit, FU.trim, removeCdpWatchCmd)(msg.message.text)
-
-    arrayOfCmd = checkForLiquidRate(arrayOfCmd)
-
+    arrayOfCmd[1] = checkForLiquidRatio(arrayOfCmd[1])
     const {outcome, explain} = Validate.cdpWatchReq(arrayOfCmd)
 
     if (!outcome) {
       return msg.reply(explain)
     }
-
 
     RBU.newUserCheckAndCreate(robot, msg.message.user.id)
 
@@ -92,34 +84,38 @@ module.exports = (robot) => {
       return msg.reply(`You are already tracking the CDP with the ID of ${arrayOfCmd[0]}`)
     }
 
-    // get CDP takes the CdpId as an arg
-    const cdpInfo = await Maker.getCDP(Number(arrayOfCmd[0]))
 
-    const desiredCollatRatio = Number(arrayOfCmd[1].substring(0, arrayOfCmd[1].length - 1))
+    try {
+      // get CDP takes the CdpId as an arg
+      console.log('cdpID', Number(arrayOfCmd[0]))
+      const cdpInfo = await Maker.getCDP(Number(arrayOfCmd[0]))
+      const desiredCollatRatio = Number(arrayOfCmd[1].substring(0, arrayOfCmd[1].length - 1))
 
-    //addCDPId and get back userObj
-    const addCdpId = FU.modObjArrPushKickBack('cdps', {id: arrayOfCmd[0], liqNotifyRatio: desiredCollatRatio})
+      //addCDPId and get back userObj
+      const addCdpId = FU.modObjArrPushKickBack('cdps', {id: arrayOfCmd[0], liqNotifyRatio: desiredCollatRatio})
 
-    robot.brain.set(msg.message.user.id, addCdpId(robot.brain.get(msg.message.user.id)))
-
-    msg.reply(`You are now tracking the following CDP and will be notified when the CDP\'s collateralization ratio falls below *${desiredCollatRatio}%*\n ${cdpObjectToString(cdpInfo)}`)
+      robot.brain.set(msg.message.user.id, addCdpId(robot.brain.get(msg.message.user.id)))
+      console.log('cdp we try to track', cdpInfo)
+      return msg.reply(`You are now tracking the following CDP and will be notified when the CDP\'s collateralization ratio falls below *${desiredCollatRatio}%*\n ${cdpObjectToString(cdpInfo)}`)
+    } catch (error) {
+      console.log('in error!', error)
+      return msg.reply(`${error}`)
+    }
   })
 
    robot.respond('/cdp list(.*)$/i', async (msg) => {
-     if (msg.match[2] != undefined) {
-       msg.reply(`\`${msg.message.txt}\` is not a valid command, to see a list of available commands run \`@doge help cdp\``)
-
-    } else if (msg.match[1] === ' daily') {
-
+    if (msg.match[1] === ' daily') {
+      msg.finish()
       const outcomeMessage = setupCdpTimedList('cdpListDaily','daily', robot, msg)
       msg.reply(outcomeMessage)
 
     } else if (msg.match[1] === ' weekly') {
-
+      msg.finish()
       const outcomeMessage = setupCdpTimedList('cdpListWeekly','weekly', robot, msg)
       msg.reply(outcomeMessage)
 
-    } else if (msg.match[1] === ' ' || msg.match[1] === '') {
+    } else if (msg.match[1] === '') {
+      msg.finish()
       try {
         if (robot.brain.get(msg.message.user.id) && (robot.brain.get(msg.message.user.id).cdps && robot.brain.get(msg.message.user.id).cdps.length)) {
           const trackedBrainCdps = robot.brain.get(msg.message.user.id).cdps
@@ -138,10 +134,14 @@ module.exports = (robot) => {
     }
   })
 
-  robot.respond(/cdp forget/i, async (msg) => {
+  robot.respond(/cdp forget(.*)$/i, async (msg) => {
+    msg.finish()
+    const cdpIdToForget = FU.trim(msg.match[1])
+    const {outcome, explain} = Validate.cdpForgetReq(cdpIdToForget)
 
-    const removeCdpForgetCmd = FU.replace(`@${process.env.ROCKETCHAT_USER} cdp forget`,'')
-    const cdpIdToForget = FU.trim(removeCdpForgetCmd(msg.message.text))
+    if (!outcome) {
+      return msg.reply(explain)
+    }
 
     if (checkForCdp(cdpIdToForget, robot.brain.get(msg.message.user.id).cdps)) {
       const forgetCdp = modObjArrRemoveCdpKickBack('cdps', cdpIdToForget)
@@ -150,7 +150,14 @@ module.exports = (robot) => {
     }
 
     return msg.reply(`You were not watching CDP ${cdpIdToForget} and therefore can\'t forget it. If you would like to see a full list of the CDP\'s you are watching, run the command \`@doge cdp list\`.`)
+  })
 
+  robot.listen( msg => {
+    if (msg.message && (msg.message.text.substr(0,9) ==='@doge cdp')) {
+      return true
+    }
+  }, msg => {
+    return msg.reply(`I did not recognize \`${msg.message.message.text}\`as a command. Be sure to remove all trailing spaces when running a command. Additionally, If you need to see a list of commands that I can run, type \`@doge help cdp\`.`)
   })
 
 }
