@@ -11,7 +11,7 @@ Once you have installed the package be sure to add it to your `external-scripts.
 ["hubot-makerdao-cdp-alert"]
 ```
 
-Since the CDP alert bot rely's on the Maker.js library we need an Infura API key to interact with the ethereum blockchain. To get an Infura API key visit their website[https://infura.io/] and select 'SIGN UP'  
+Since the CDP alert bot relys on the Maker.js library we need an Infura API key to interact with the Ethereum blockchain. To get an Infura API key visit their website[https://infura.io/] and select 'SIGN UP'  
 
 Additionally Maker.js requires that each user / project interacting with the library use an Ethereum private key. Although this library doesn't utilize any of Maker.js methods that would need the private key it's required to do simple read requests (which is all we are doing essentially). So plug both of those into your environment variables like so:
 ```
