@@ -4,8 +4,10 @@ A cdp alert bot that allows users to watch and list their CDP's by id.
 ## getting started
 This cdp alert bot is written ontop of the hubot framework (you can check out Hubot here). This version supports Rocket.chat currently but we have plans to expand support to Signal and Slack.
 
-To install make sure you have NPM installed, then run `npm install --save hubot-makerdao-cdp-alert`
-
+To install first make sure you have NPM installed, then run:
+```
+npm install --save hubot-makerdao-cdp-alert
+```
 Once you have installed the package be sure to add it to your `external-scripts.json` file (hubot checks this file upon start):
 ```
 ["hubot-makerdao-cdp-alert"]
