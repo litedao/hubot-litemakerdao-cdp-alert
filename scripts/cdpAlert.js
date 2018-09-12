@@ -23,7 +23,11 @@ const cdpTimedList = async (timeDelim, timeDelimString, robot) => {
         const arrWatchedCdpPromises = watchedCdpsArr.map( async (cdp) => await Maker.getCDP(Number(cdp.id)))
         const arrWatchedCdps = await Promise.all(arrWatchedCdpPromises)
         const watchedCdpsString = newLineJoin(arrWatchedCdps.map(cdpObj => cdpObjectToString(cdpObj)))
-        await RBU.sendUserMessage(`Hey here is your ${timeDelimString} list of all of the CDP\'s you are watching:\n\n ${watchedCdpsString}`, robot, {user: users[k]})
+
+        const sendTimedListMsg = RBU.sendDirectMessage(robot, `Hey here is your ${timeDelimString} list of all of the CDP\'s you are watching:\n\n ${watchedCdpsString}`)
+
+        await sendTimedListMsg(users[k].name)
+
       } catch (error) {
         console.log('error', error)
       }
@@ -61,8 +65,9 @@ module.exports = (robot) => {
 
             // check that collateralizationRatio is less than or equal to the liquidation notify ratio
             if (currentCdpCollat.collateralizationRatio <= watchedCdpsArr[cdp].liqNotifyRatio) {
-              await RBU.sendUserMessage(`Warning! CDP ${watchedCdpsArr[cdp].id} currenty has a *collateralization ratio of ${currentCdpCollat.collateralizationRatio}%*. If you would like to kick your CDP please do so at https:\/\/dai.makerdao.com\/`, robot, {user: users[k]})
 
+              const sendUnderColatAlert = RBU.sendDirectMessage(robot, `Warning! CDP ${watchedCdpsArr[cdp].id} currenty has a *collateralization ratio of ${currentCdpCollat.collateralizationRatio}%*. If you would like to kick your CDP please do so at https:\/\/dai.makerdao.com\/`)
+              await sendUnderColatAlert(users[k].name)
             }
           } catch (error) {
             console.log('error', error)
