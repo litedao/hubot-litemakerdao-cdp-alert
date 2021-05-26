@@ -1,4 +1,4 @@
-# hubot-makerdao-cdp-alert
+# hubot-litemakerdao-cdp-alert
 A cdp alert bot that allows users to watch and list their CDP's by id.
 
 ## getting started
